@@ -25,7 +25,7 @@ const fetchMyIP = function (callback) {
 };
 
 const fetchCoordsByIP = function (IP, callback) {
-  request(`https://ipvigilante.com/json/${IP}`, (error, response, body) => {
+  request(`https://freegeoip.app/json/${IP}`, (error, response, body) => {
     if (error) {
       return callback(error, null);
     }
@@ -35,8 +35,8 @@ const fetchCoordsByIP = function (IP, callback) {
       return;
     }
     const coords = {};
-    coords.latitude = JSON.parse(body)['data']['latitude'];
-    coords.longitude = JSON.parse(body)['data']['longitude'];
+    coords.latitude = JSON.parse(body)['latitude'];
+    coords.longitude = JSON.parse(body)['longitude'];
     callback(null, coords);
   });
 };
@@ -66,8 +66,9 @@ const fetchISSFlyOverTimes = function (coords, callback) {
       callback(msg, null);
       return;
     }
-    const passtimes = JSON.parse(body)['response'];
-    callback(null, passtimes);
+    const passes = JSON.parse(body)['response'];
+
+    callback(null, passes);
   });
 };
 
@@ -82,7 +83,27 @@ const fetchISSFlyOverTimes = function (coords, callback) {
  *     [ { risetime: <number>, duration: <number> }, ... ]
  */
 const nextISSTimesForMyLocation = function (callback) {
-  // empty for now
+
+  fetchMyIP((error, ip) => {
+    if (error) {
+      return callback(`Fetching IP didn't work! ${error}`, null);
+    }
+
+    fetchCoordsByIP(ip, (error, coords) => {
+      if (error) {
+        return callback(`Fetching coords didn't work! ${error}`, null);
+      } else {
+
+        fetchISSFlyOverTimes(coords, (error, data) => {
+          if (error) {
+            return callback(`Fetching ISS flyover times didn't work! ${error}`, null);
+          } else {
+            callback(null, data);
+          }
+        });
+      }
+    });
+  });
 }
 
-module.exports = { fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes, nextISSTimesForMyLocation };
+module.exports = { nextISSTimesForMyLocation };
